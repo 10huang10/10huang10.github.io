@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>記帳主頁</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { padding: 20px; font-family: sans-serif; }
+    .form-control, .btn { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+  <h1>我的記帳本</h1>
+  <nav>
+    <a href="settings.html">設定</a>
+    <a href="currency.html">匯率管理</a>
+    <a href="analysis.html">圖表分析</a>
+    <a href="notify.html">通知</a>
+  </nav>
+  <header>
+  <section class="mb-4">
+    <h2>新增支出 / 收入</h2>
+    <form id="recordForm">
+      <input type="text" id="item" class="form-control" placeholder="項目名稱" required />
+      <input type="number" id="amount" class="form-control" placeholder="金額" required />
+      <select id="category" class="form-control">
+        <optgroup label="🍴 飲食">
+          <option value="早餐">🍳 早餐</option>
+          <option value="午餐">🍱 午餐</option>
+          <option value="晚餐">🍲 晚餐</option>
+          <option value="飲料">☕️ 飲料/咖啡</option>
+        </optgroup>
+        <optgroup label="🛒 生活支出">
+          <option value="雜貨">🛒 超市/雜貨</option>
+          <option value="交通">🚗 交通</option>
+          <option value="娛樂">🎉 娛樂</option>
+          <option value="購物">🛍️ 購物</option>
+          <option value="健康">🏥 健康</option>
+          <option value="其他支出">💸 其他支出</option>
+        </optgroup>
+        <optgroup label="💰 收入類">
+          <option value="薪資">💼 薪資</option>
+          <option value="獎金">🎁 獎金</option>
+          <option value="投資">📈 投資收入</option>
+          <option value="其他收入">💰 其他收入</option>
+        </optgroup>
+      </select>
+      <button type="submit" class="btn btn-primary">新增</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>紀錄列表</h2>
+    <ul id="recordList" class="list-group mb-4"></ul>
+  </section>
+
+  <section class="mb-4">
+    <h2>收支圓餅圖</h2>
+    <canvas id="pieChart" width="300" height="300"></canvas>
+  </section>
+
+  <section>
+    <h2>每月儲蓄進度</h2>
+    <input type="number" id="goalInput" class="form-control" placeholder="請輸入儲蓄目標（元）" />
+    <button onclick="setGoal()" class="btn btn-success">設定目標</button>
+    <progress id="goalProgress" value="0" max="100" class="w-100 my-2"></progress>
+    <p id="progressText"></p>
+  </section>
+
+  <script>
+    let records = JSON.parse(localStorage.getItem("records") || "[]");
+  let goal = localStorage.getItem("savingGoal") ? parseFloat(localStorage.getItem("savingGoal")) : 0;
+
+  document.getElementById("recordForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const item = document.getElementById("item").value;
+    const amount = parseFloat(document.getElementById("amount").value);
+    const category = document.getElementById("category").value;
+    const incomeTypes = ["薪資", "獎金", "投資", "其他收入"];
+    const type = incomeTypes.includes(category) ? "income" : "expense";
+    const timestamp = new Date().toISOString(); // 新增時間戳記
+
+    if (!item || isNaN(amount)) return;
+
+    records.push({ item, amount, type, category, timestamp });
+    localStorage.setItem("records", JSON.stringify(records));
+    updateRecordList();
+    updateChart();
+    updateProgress();
+    this.reset();
+  });
+
+  function updateRecordList() {
+  const ul = document.getElementById("recordList");
+  ul.innerHTML = "";
+  records.forEach((r, i) => {
+    let time = "無時間紀錄";
+    if (r.timestamp) {
+      const parsed = new Date(r.timestamp);
+      if (!isNaN(parsed)) {
+        time = parsed.toLocaleString("zh-TW");
+      }
+    }
+
+    const li = document.createElement("li");
+    li.className = "list-group-item d-flex justify-content-between align-items-start flex-column";
+    li.innerHTML = `<div>${r.category} - ${r.item}：${r.amount} 元</div><small class="text-muted">記帳時間：${time}</small>`;
+
+    const btn = document.createElement("button");
+    btn.className = "btn btn-danger btn-sm align-self-end";
+    btn.textContent = "刪除";
+    btn.onclick = function () {
+      records.splice(i, 1);
+      localStorage.setItem("records", JSON.stringify(records));
+      updateRecordList();
+      updateChart();
+      updateProgress();
+    };
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+
+  }
+
+    function updateChart() {
+      const income = records.filter(r => r.type === "income").reduce((sum, r) => sum + r.amount, 0);
+      const expense = records.filter(r => r.type === "expense").reduce((sum, r) => sum + r.amount, 0);
+      const ctx = document.getElementById("pieChart").getContext("2d");
+      if (window.pieChartInstance) window.pieChartInstance.destroy();
+      window.pieChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['收入', '支出'],
+          datasets: [{
+            data: [income, expense],
+            backgroundColor: ['#4CAF50', '#FF5252']
+          }]
+        }
+      });
+    }
+
+    function setGoal() {
+      const goalInput = parseFloat(document.getElementById("goalInput").value);
+      if (!goalInput || goalInput <= 0) return alert("請輸入有效的儲蓄目標！");
+      goal = goalInput;
+      localStorage.setItem("savingGoal", goal);
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const income = records.filter(r => r.type === "income").reduce((sum, r) => sum + r.amount, 0);
+      const expense = records.filter(r => r.type === "expense").reduce((sum, r) => sum + r.amount, 0);
+      const remaining = income - expense;
+      const progress = goal > 0 ? Math.min(100, Math.floor((remaining / goal) * 100)) : 0;
+
+      document.getElementById("goalProgress").value = progress;
+      document.getElementById("progressText").innerText = `目前儲蓄：${remaining} / 目標：${goal}（${progress}%）`;
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.body.className = savedTheme;
+  });
+  const lang = localStorage.getItem("lang") || "zh";
+  if (lang === "en") {
+    document.getElementById("pageTitle").textContent = "My Budget Book";
+  } else {
+    document.getElementById("pageTitle").textContent = "我的記帳本";
+  }
+
+    updateRecordList();
+    updateChart();
+    updateProgress();
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>多幣別管理</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    input, select {
+      margin: 8px 0;
+      padding: 5px;
+      width: 200px;
+    }
+    .result {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>多幣別管理</h1>
+    <nav>
+      <a href="dashboard.html">主頁</a>
+      <a href="settings.html">設定</a>
+      <a href="analysis.html">圖表分析</a>
+      <a href="notify.html">通知</a>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>匯率換算</h2>
+      <label for="amount">輸入金額（台幣）：</label>
+      <input type="number" id="amount" placeholder="例如 1000"><br>
+
+      <label for="currency">選擇幣別：</label>
+      <select id="currency">
+        <option value="USD">美元 (USD)</option>
+        <option value="JPY">日幣 (JPY)</option>
+        <option value="KRW">韓幣 (KRW)</option>
+        <option value="CNY">人民幣 (CNY)</option>
+        <option value="VND">越南盾 (VND)</option>
+        <option value="IDR">印尼盾 (IDR)</option>
+        <option value="MYR">馬來幣 (MYR)</option>
+      </select><br>
+
+      <button onclick="convertCurrency()">換算</button>
+
+      <div class="result" id="resultText"></div>
+    </section>
+  </main>
+
+  <script>
+    // 假設匯率（可日後用API更新）
+    const exchangeRates = {
+      USD: 0.032,
+      JPY: 4.5,
+      KRW: 42,
+      CNY: 0.23,
+      VND: 780,
+      IDR: 510,
+      MYR: 0.15
+    };
+
+    function convertCurrency() {
+      const amount = parseFloat(document.getElementById("amount").value);
+      const currency = document.getElementById("currency").value;
+
+      if (isNaN(amount)) {
+        alert("請輸入有效的金額！");
+        return;
+      }
+
+      const rate = exchangeRates[currency];
+      const converted = amount * rate;
+      document.getElementById("resultText").innerText = `約為 ${converted.toFixed(2)} ${currency}`;
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.body.className = savedTheme;
+  });
+  const lang = localStorage.getItem("lang") || "zh";
+  if (lang === "en") {
+    document.getElementById("pageTitle").textContent = "My Budget Book";
+  } else {
+    document.getElementById("pageTitle").textContent = "我的記帳本";
+  }
+  </script>
+</body>
+</html>

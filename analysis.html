@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>圖表分析</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    canvas {
+      max-width: 700px;
+      margin: 30px auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>圖表分析</h1>
+    <nav>
+      <a href="dashboard.html">主頁</a>
+      <a href="settings.html">設定</a>
+      <a href="currency.html">多幣別管理</a>
+      <a href="notify.html">通知</a>
+    </nav>
+  </header>
+
+  <main>
+   
+  <section class="mb-5">
+    <h2>平均支出與餘額（月比較）</h2>
+    <canvas id="barChart"></canvas>
+  </section>
+
+  <section>
+    <h2>每日支出與收入趨勢</h2>
+    <canvas id="lineChart"></canvas>
+  </section>
+
+  <script>
+    const records = JSON.parse(localStorage.getItem("records") || "[]");
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+
+    let currentStats = { income: 0, expense: 0 };
+    let lastStats = { income: 0, expense: 0 };
+    let dailyIncome = {}, dailyExpense = {};
+
+    records.forEach(r => {
+      const date = new Date(r.date || r.timestamp || Date.now());
+      const m = date.getMonth();
+      const d = date.getDate();
+
+      if (!dailyIncome[d]) dailyIncome[d] = 0;
+      if (!dailyExpense[d]) dailyExpense[d] = 0;
+
+      if (m === currentMonth) {
+        if (r.type === "income") currentStats.income += r.amount;
+        else currentStats.expense += r.amount;
+        if (r.type === "income") dailyIncome[d] += r.amount;
+        else dailyExpense[d] += r.amount;
+      } else if (m === lastMonth) {
+        if (r.type === "income") lastStats.income += r.amount;
+        else lastStats.expense += r.amount;
+      }
+    });
+
+    // 長條圖（平均支出與餘額）
+    const bar = new Chart(document.getElementById("barChart"), {
+      type: "bar",
+      data: {
+        labels: ["上月", "本月"],
+        datasets: [
+          {
+            label: "平均支出",
+            backgroundColor: "#FF6384",
+            data: [lastStats.expense / 30, currentStats.expense / 30]
+          },
+          {
+            label: "平均餘額",
+            backgroundColor: "#36A2EB",
+            data: [(lastStats.income - lastStats.expense) / 30, (currentStats.income - currentStats.expense) / 30]
+          }
+        ]
+      },
+      options: { responsive: true }
+    });
+
+    // 折線圖（每日趨勢）
+    const days = Array.from({ length: 31 }, (_, i) => i + 1);
+    const incomeLine = days.map(day => dailyIncome[day] || 0);
+    const expenseLine = days.map(day => dailyExpense[day] || 0);
+
+    const line = new Chart(document.getElementById("lineChart"), {
+      type: "line",
+      data: {
+        labels: days.map(d => `${d}日`),
+        datasets: [
+          {
+            label: "每日收入",
+            borderColor: "green",
+            data: incomeLine,
+            fill: false
+          },
+          {
+            label: "每日支出",
+            borderColor: "red",
+            data: expenseLine,
+            fill: false
+          }
+        ]
+      },
+      options: { responsive: true }
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.body.className = savedTheme;
+  });
+  const lang = localStorage.getItem("lang") || "zh";
+  if (lang === "en") {
+    document.getElementById("pageTitle").textContent = "My Budget Book";
+  } else {
+    document.getElementById("pageTitle").textContent = "我的記帳本";
+  }
+  </script>
+</body>
+</html>

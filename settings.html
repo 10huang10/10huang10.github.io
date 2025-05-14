@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>設定</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>設定</h1>
+    <nav>
+      <a href="dashboard.html">主頁</a>
+      <a href="currency.html">匯率管理</a>
+      <a href="analysis.html">圖表分析</a>
+      <a href="notify.html">通知</a>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>主題模式</h2>
+      <select id="themeSelect" class="form-select">
+        <option value="light">☀️ 淺色模式</option>
+        <option value="dark">🌙 深色模式</option>
+      </select>
+    </section>
+
+    <section>
+      <h2>語言 Language</h2>
+      <select id="langSelect">
+        <option value="zh">中文繁體</option>
+        <option value="en">English</option>
+      </select>
+    </section>
+
+    <section>
+      <h2>提醒時間設定</h2>
+      <select id="reminderSelect">
+        <!-- 早上8點到晚上12點 -->
+        <script>
+          for (let hour = 8; hour <= 24; hour++) {
+            const label = hour <= 12 ? `上午 ${hour} 點` : `下午 ${hour - 12} 點`;
+            document.write(`<option value="${hour}">${label}</option>`);
+          }
+        </script>
+      </select>
+    </section>
+
+    <section>
+      <h2>回饋與評論</h2>
+      <textarea rows="5" cols="40" placeholder="請留下您的建議或意見..."></textarea><br>
+      <button onclick="alert('感謝您的回饋！')">送出</button>
+    </section>
+
+    <section>
+      <h2>帳戶</h2>
+      <button onclick="logout()">登出帳戶</button>
+    </section>
+  </main>
+
+  <script>
+    // 主題切換
+    document.getElementById('themeSelect').addEventListener('change', function () {
+      document.body.className = this.value;
+      localStorage.setItem('theme', this.value);
+    });
+
+    // 語言切換（簡易處理）
+    document.getElementById('langSelect').addEventListener('change', function () {
+      alert('語言已切換，請重新整理頁面應用變更。');
+      localStorage.setItem('lang', this.value);
+    });
+
+    // 登出
+    function logout() {
+      localStorage.removeItem('user');
+      location.href = 'index.html';
+    }
+
+    // 初始化主題
+    window.onload = function () {
+      const theme = localStorage.getItem('theme');
+      if (theme) document.body.className = theme;
+      const lang = localStorage.getItem('lang');
+      if (lang) document.getElementById('langSelect').value = lang;
+    };
+    document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.body.className = savedTheme;
+  });
+  const lang = localStorage.getItem("lang") || "zh";
+  if (lang === "en") {
+    document.getElementById("pageTitle").textContent = "My Budget Book";
+  } else {
+    document.getElementById("pageTitle").textContent = "我的記帳本";
+  }
+  </script>
+</body>
+</html>

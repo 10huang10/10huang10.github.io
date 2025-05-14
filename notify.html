@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>通知提醒</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .notification {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin: 10px auto;
+      width: 90%;
+      max-width: 600px;
+      border-radius: 5px;
+      background-color: #fefefe;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .notification.warning {
+      border-color: #ff9800;
+      background-color: #fff8e1;
+    }
+
+    .notification.alert {
+      border-color: #f44336;
+      background-color: #ffebee;
+    }
+
+    .notification.success {
+      border-color: #4caf50;
+      background-color: #e8f5e9;
+    }
+
+    h2 {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    header nav a {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>通知提醒</h1>
+    <nav>
+      <a href="dashboard.html">主頁</a>
+      <a href="settings.html">設定</a>
+      <a href="currency.html">多幣別管理</a>
+      <a href="analysis.html">圖表分析</a>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>本日提醒</h2>
+
+      <div class="notification success">
+        ✅ 每日記帳提醒：記得今天輸入您的支出與收入！
+      </div>
+
+      <div class="notification alert" id="overSpendNotification" style="display: none;">
+        ⚠️ 今日支出已超過 2000 元，請留意花費。
+      </div>
+
+      <div class="notification warning" id="savingsAlert" style="display: none;">
+        💰 儲蓄目標提醒：您本月的儲蓄已剩下 20%，請注意理財！
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // 模擬資料
+    const todaySpending = 2350; // 今日支出
+    const monthlyIncome = 30000;
+    const savingsGoal = 10000;
+    const currentSpending = 18500;
+    const remainingSavings = monthlyIncome - currentSpending;
+
+    // 過度支出提醒
+    if (todaySpending > 2000) {
+      document.getElementById("overSpendNotification").style.display = "block";
+    }
+
+    // 儲蓄剩下不到 20% 提醒
+    const savingsLeft = monthlyIncome - currentSpending - savingsGoal;
+    const threshold = savingsGoal * 0.2;
+
+    if (savingsLeft < threshold) {
+      document.getElementById("savingsAlert").style.display = "block";
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.body.className = savedTheme;
+  });
+  const lang = localStorage.getItem("lang") || "zh";
+  if (lang === "en") {
+    document.getElementById("pageTitle").textContent = "My Budget Book";
+  } else {
+    document.getElementById("pageTitle").textContent = "我的記帳本";
+  }
+  </script>
+</body>
+</html>
