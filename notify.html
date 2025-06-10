@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>通知提醒</title>
+  <title id="title">通知提醒</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
     .notification {
@@ -39,24 +39,32 @@
     header nav a {
       margin-right: 10px;
     }
+
+    #langSelect {
+      margin-left: 15px;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>通知提醒</h1>
+    <h1 id="pageTitle">通知提醒</h1>
     <nav>
-      <a href="dashboard.html">主頁</a>
-      <a href="settings.html">設定</a>
-      <a href="currency.html">多幣別管理</a>
-      <a href="analysis.html">圖表分析</a>
+      <a href="dashboard.html" id="dashboard">主頁</a> |
+      <a href="currency.html" id="currency">匯率管理</a> |
+      <a href="analysis.html" id="analysis">圖表分析</a> |
+      <a href="settings.html" id="settings">設定</a>
+      <select id="langSelect" class="form-select w-auto d-inline-block">
+        <option value="zh">中文繁體</option>
+        <option value="en">English</option>
+      </select>
     </nav>
   </header>
 
   <main>
     <section>
-      <h2>本日提醒</h2>
+      <h2 id="todayTitle">本日提醒</h2>
 
-      <div class="notification success">
+      <div class="notification success" id="dailyNotify">
         ✅ 每日記帳提醒：記得今天輸入您的支出與收入！
       </div>
 
@@ -71,35 +79,83 @@
   </main>
 
   <script>
-    // 模擬資料
-    const todaySpending = 2350; // 今日支出
-    const monthlyIncome = 30000;
-    const savingsGoal = 10000;
-    const currentSpending = 18500;
-    const remainingSavings = monthlyIncome - currentSpending;
+    const langData = {
+      zh: {
+        title: "通知提醒",
+        pageTitle: "通知提醒",
+        dashboard: "主頁",
+        settings: "設定",
+        currency: "匯率管理",
+        analysis: "圖表分析",
+        todayTitle: "本日提醒",
+        daily: "✅ 每日記帳提醒：記得今天輸入您的支出與收入！",
+        overspend: "⚠️ 今日支出已超過 2000 元，請留意花費。",
+        savings: "💰 儲蓄目標提醒：您本月的儲蓄已剩下 20%，請注意理財！"
+      },
+      en: {
+        title: "Notifications",
+        pageTitle: "Notifications",
+        dashboard: "Dashboard",
+        settings: "Settings",
+        currency: "Currency",
+        analysis: "Chart Analysis",
+        todayTitle: "Today's Reminder",
+        daily: "✅ Daily Reminder: Don't forget to log today's income and expenses!",
+        overspend: "⚠️ Your spending today exceeded 2000 TWD. Please watch your budget.",
+        savings: "💰 Savings Alert: Only 20% of your savings goal remains. Please manage your money carefully!"
+      }
+    };
 
-    // 過度支出提醒
-    if (todaySpending > 2000) {
-      document.getElementById("overSpendNotification").style.display = "block";
+    function applyLanguage(lang) {
+      const t = langData[lang] || langData.zh;
+      document.title = t.title;
+      document.getElementById("pageTitle").textContent = t.pageTitle;
+      document.getElementById("dashboard").textContent = t.dashboard;
+      document.getElementById("settings").textContent = t.settings;
+      document.getElementById("currency").textContent = t.currency;
+      document.getElementById("analysis").textContent = t.analysis;
+      document.getElementById("todayTitle").textContent = t.todayTitle;
+      document.getElementById("dailyNotify").textContent = t.daily;
+      document.getElementById("overSpendNotification").textContent = t.overspend;
+      document.getElementById("savingsAlert").textContent = t.savings;
     }
 
-    // 儲蓄剩下不到 20% 提醒
-    const savingsLeft = monthlyIncome - currentSpending - savingsGoal;
-    const threshold = savingsGoal * 0.2;
+    document.getElementById("langSelect").addEventListener("change", () => {
+      const lang = document.getElementById("langSelect").value;
+      localStorage.setItem("lang", lang);
+      applyLanguage(lang);
+    });
 
-    if (savingsLeft < threshold) {
-      document.getElementById("savingsAlert").style.display = "block";
-    }
-    document.addEventListener("DOMContentLoaded", function () {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    document.body.className = savedTheme;
-  });
-  const lang = localStorage.getItem("lang") || "zh";
-  if (lang === "en") {
-    document.getElementById("pageTitle").textContent = "My Budget Book";
-  } else {
-    document.getElementById("pageTitle").textContent = "我的記帳本";
-  }
+    document.addEventListener("DOMContentLoaded", () => {
+      const lang = localStorage.getItem("lang") || "zh";
+      document.getElementById("langSelect").value = lang;
+      applyLanguage(lang);
+
+      // 拿到記帳紀錄資料
+      const records = JSON.parse(localStorage.getItem("records") || "[]");
+      const today = new Date().toISOString().split("T")[0];
+
+      // 計算今日支出
+      const todaySpending = records
+        .filter(r => r.type === "expense" && r.timestamp?.startsWith(today))
+        .reduce((sum, r) => sum + r.amount, 0);
+
+      if (todaySpending > 2000) {
+        document.getElementById("overSpendNotification").style.display = "block";
+      }
+
+      // 儲蓄提醒（當儲蓄剩餘小於目標 20%）
+      const income = records.filter(r => r.type === "income").reduce((sum, r) => sum + r.amount, 0);
+      const expense = records.filter(r => r.type === "expense").reduce((sum, r) => sum + r.amount, 0);
+      const goal = parseFloat(localStorage.getItem("savingGoal") || "0");
+
+      const savingsLeft = income - expense - goal;
+      const threshold = goal * 0.2;
+
+      if (goal > 0 && savingsLeft < threshold) {
+        document.getElementById("savingsAlert").style.display = "block";
+      }
+    });
   </script>
 </body>
 </html>

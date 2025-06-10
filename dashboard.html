@@ -1,28 +1,39 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>記帳主頁</title>
+  <title id="title">TRACKEASE 輕鬆記帳</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { padding: 20px; font-family: sans-serif; }
     .form-control, .btn { margin-bottom: 10px; }
+    #pieChart {
+  max-width: 300px;
+  width: 100%;
+  margin: 0 auto;
+  display: block;
+}
+
   </style>
 </head>
 <body>
   <header>
-  <h1>我的記帳本</h1>
-  <nav>
-    <a href="settings.html">設定</a>
-    <a href="currency.html">匯率管理</a>
-    <a href="analysis.html">圖表分析</a>
-    <a href="notify.html">通知</a>
-  </nav>
-  <header>
+    <h1 id="mainTitle">我的記帳本</h1>
+    <nav>
+      <a href="settings.html" id="settings">設定</a> |
+      <a href="currency.html" id="currency">匯率管理</a> |
+      <a href="analysis.html" id="analysis">圖表分析</a> |
+      <a href="notify.html" id="notify">通知</a>
+      <select id="langSelect" class="form-select w-auto d-inline-block ms-3">
+        <option value="zh">中文繁體</option>
+        <option value="en">English</option>
+      </select>
+    </nav>
+  </header>
+
   <section class="mb-4">
-    <h2>新增支出 / 收入</h2>
+    <h2 id="addRecord">新增紀錄</h2>
     <form id="recordForm">
       <input type="text" id="item" class="form-control" placeholder="項目名稱" required />
       <input type="number" id="amount" class="form-control" placeholder="金額" required />
@@ -48,82 +59,139 @@
           <option value="其他收入">💰 其他收入</option>
         </optgroup>
       </select>
-      <button type="submit" class="btn btn-primary">新增</button>
+      <input type="datetime-local" id="timestamp" class="form-control" />
+      <button type="submit" id="addBtn" class="btn btn-primary">新增</button>
     </form>
   </section>
 
   <section>
-    <h2>紀錄列表</h2>
+    <h2 id="records">紀錄列表</h2>
     <ul id="recordList" class="list-group mb-4"></ul>
   </section>
 
   <section class="mb-4">
-    <h2>收支圓餅圖</h2>
-    <canvas id="pieChart" width="300" height="300"></canvas>
+    <h2 id="chartTitle">收支圓餅圖</h2>
+    <canvas id="pieChart"></canvas>
   </section>
 
   <section>
-    <h2>每月儲蓄進度</h2>
+    <h2 id="progressTitle">每月儲蓄進度</h2>
     <input type="number" id="goalInput" class="form-control" placeholder="請輸入儲蓄目標（元）" />
-    <button onclick="setGoal()" class="btn btn-success">設定目標</button>
+    <button onclick="setGoal()" class="btn btn-success" id="goalBtn">設定目標</button>
     <progress id="goalProgress" value="0" max="100" class="w-100 my-2"></progress>
     <p id="progressText"></p>
   </section>
 
   <script>
-    let records = JSON.parse(localStorage.getItem("records") || "[]");
-  let goal = localStorage.getItem("savingGoal") ? parseFloat(localStorage.getItem("savingGoal")) : 0;
-
-  document.getElementById("recordForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    const item = document.getElementById("item").value;
-    const amount = parseFloat(document.getElementById("amount").value);
-    const category = document.getElementById("category").value;
-    const incomeTypes = ["薪資", "獎金", "投資", "其他收入"];
-    const type = incomeTypes.includes(category) ? "income" : "expense";
-    const timestamp = new Date().toISOString(); // 新增時間戳記
-
-    if (!item || isNaN(amount)) return;
-
-    records.push({ item, amount, type, category, timestamp });
-    localStorage.setItem("records", JSON.stringify(records));
-    updateRecordList();
-    updateChart();
-    updateProgress();
-    this.reset();
-  });
-
-  function updateRecordList() {
-  const ul = document.getElementById("recordList");
-  ul.innerHTML = "";
-  records.forEach((r, i) => {
-    let time = "無時間紀錄";
-    if (r.timestamp) {
-      const parsed = new Date(r.timestamp);
-      if (!isNaN(parsed)) {
-        time = parsed.toLocaleString("zh-TW");
+    // 語言資料
+    const langData = {
+      zh: {
+        title: "TRACKEASE 輕鬆記帳",
+        mainTitle: "我的記帳本",
+        settings: "設定",
+        currency: "匯率管理",
+        analysis: "圖表分析",
+        notify: "通知",
+        addRecord: "新增紀錄",
+        addBtn: "新增",
+        records: "紀錄列表",
+        chartTitle: "收支圓餅圖",
+        progressTitle: "每月儲蓄進度",
+        goalBtn: "設定目標"
+      },
+      en: {
+        title: "TRACKEASE - Budget Tracker",
+        mainTitle: "My Budget Book",
+        settings: "Settings",
+        currency: "Currency",
+        analysis: "Chart Analysis",
+        notify: "Notifications",
+        addRecord: "Add Record",
+        addBtn: "Add",
+        records: "Records",
+        chartTitle: "Income & Expense Pie Chart",
+        progressTitle: "Monthly Savings Progress",
+        goalBtn: "Set Goal"
       }
+    };
+
+    function applyLanguage(lang) {
+      const d = langData[lang] || langData.zh;
+      document.title = d.title;
+      document.getElementById("mainTitle").textContent = d.mainTitle;
+      document.getElementById("settings").textContent = d.settings;
+      document.getElementById("currency").textContent = d.currency;
+      document.getElementById("analysis").textContent = d.analysis;
+      document.getElementById("notify").textContent = d.notify;
+      document.getElementById("addRecord").textContent = d.addRecord;
+      document.getElementById("addBtn").textContent = d.addBtn;
+      document.getElementById("records").textContent = d.records;
+      document.getElementById("chartTitle").textContent = d.chartTitle;
+      document.getElementById("progressTitle").textContent = d.progressTitle;
+      document.getElementById("goalBtn").textContent = d.goalBtn;
     }
 
-    const li = document.createElement("li");
-    li.className = "list-group-item d-flex justify-content-between align-items-start flex-column";
-    li.innerHTML = `<div>${r.category} - ${r.item}：${r.amount} 元</div><small class="text-muted">記帳時間：${time}</small>`;
+    document.getElementById("langSelect").addEventListener("change", () => {
+      const lang = document.getElementById("langSelect").value;
+      localStorage.setItem("lang", lang);
+      applyLanguage(lang);
+    });
 
-    const btn = document.createElement("button");
-    btn.className = "btn btn-danger btn-sm align-self-end";
-    btn.textContent = "刪除";
-    btn.onclick = function () {
-      records.splice(i, 1);
+    // 初始化語言
+    const savedLang = localStorage.getItem("lang") || "zh";
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("langSelect").value = savedLang;
+      applyLanguage(savedLang);
+      updateRecordList();
+      updateChart();
+      updateProgress();
+    });
+
+    // 記帳功能
+    let records = JSON.parse(localStorage.getItem("records") || "[]");
+    let goal = localStorage.getItem("savingGoal") ? parseFloat(localStorage.getItem("savingGoal")) : 0;
+
+    document.getElementById("recordForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const item = document.getElementById("item").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      const category = document.getElementById("category").value;
+      const incomeTypes = ["薪資", "獎金", "投資", "其他收入"];
+      const type = incomeTypes.includes(category) ? "income" : "expense";
+      const timestamp = document.getElementById("timestamp").value || new Date().toISOString();
+      if (!item || isNaN(amount)) return;
+
+      records.push({ item, amount, type, category, timestamp });
       localStorage.setItem("records", JSON.stringify(records));
       updateRecordList();
       updateChart();
       updateProgress();
-    };
-    li.appendChild(btn);
-    ul.appendChild(li);
-  });
+      this.reset();
+    });
 
-  }
+    function updateRecordList() {
+      const ul = document.getElementById("recordList");
+      ul.innerHTML = "";
+      records.forEach((r, i) => {
+        let time = r.timestamp ? new Date(r.timestamp).toLocaleString("zh-TW") : "無時間紀錄";
+        const li = document.createElement("li");
+        li.className = "list-group-item d-flex justify-content-between align-items-start flex-column";
+        li.innerHTML = `<div>${r.category} - ${r.item}：${r.amount} 元</div><small class="text-muted">記帳時間：${time}</small>`;
+
+        const btn = document.createElement("button");
+        btn.className = "btn btn-danger btn-sm align-self-end";
+        btn.textContent = "刪除";
+        btn.onclick = function () {
+          records.splice(i, 1);
+          localStorage.setItem("records", JSON.stringify(records));
+          updateRecordList();
+          updateChart();
+          updateProgress();
+        };
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    }
 
     function updateChart() {
       const income = records.filter(r => r.type === "income").reduce((sum, r) => sum + r.amount, 0);
@@ -159,20 +227,6 @@
       document.getElementById("goalProgress").value = progress;
       document.getElementById("progressText").innerText = `目前儲蓄：${remaining} / 目標：${goal}（${progress}%）`;
     }
-    document.addEventListener("DOMContentLoaded", function () {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    document.body.className = savedTheme;
-  });
-  const lang = localStorage.getItem("lang") || "zh";
-  if (lang === "en") {
-    document.getElementById("pageTitle").textContent = "My Budget Book";
-  } else {
-    document.getElementById("pageTitle").textContent = "我的記帳本";
-  }
-
-    updateRecordList();
-    updateChart();
-    updateProgress();
   </script>
 </body>
 </html>

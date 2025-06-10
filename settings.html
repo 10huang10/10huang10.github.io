@@ -2,98 +2,146 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>設定</title>
+   <title>設定</title>
   <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <header>
-    <h1>設定</h1>
-    <nav>
-      <a href="dashboard.html">主頁</a>
-      <a href="currency.html">匯率管理</a>
-      <a href="analysis.html">圖表分析</a>
-      <a href="notify.html">通知</a>
-    </nav>
-  </header>
 
+</head>
+<body class="light">
+  <header>
+     <h1 id="title">設定</h1>
+    <nav>
+      <a href="settings.html" id="dashboard">主頁</a> |
+      <a href="currency.html" id="currency">匯率管理</a> |
+      <a href="analysis.html" id="analysis">圖表分析</a> |
+      <a href="notify.html" id="notify">通知</a>
+    </nav>
+  
+  </header>
+  
   <main>
     <section>
-      <h2>主題模式</h2>
-      <select id="themeSelect" class="form-select">
+      <h3 id="themeLabel">主題模式</h3>
+      <select id="themeSelect">
         <option value="light">☀️ 淺色模式</option>
         <option value="dark">🌙 深色模式</option>
       </select>
     </section>
 
     <section>
-      <h2>語言 Language</h2>
+      <h3 id="langLabel">語言</h3>
       <select id="langSelect">
         <option value="zh">中文繁體</option>
         <option value="en">English</option>
       </select>
     </section>
 
-    <section>
-      <h2>提醒時間設定</h2>
-      <select id="reminderSelect">
-        <!-- 早上8點到晚上12點 -->
-        <script>
-          for (let hour = 8; hour <= 24; hour++) {
-            const label = hour <= 12 ? `上午 ${hour} 點` : `下午 ${hour - 12} 點`;
-            document.write(`<option value="${hour}">${label}</option>`);
-          }
-        </script>
-      </select>
+   <section>
+        <h3 id="reminderLabel">提醒時間</h3>
+      <select id="reminderSelect" class="form-select w-auto"></select>
     </section>
 
-    <section>
-      <h2>回饋與評論</h2>
-      <textarea rows="5" cols="40" placeholder="請留下您的建議或意見..."></textarea><br>
-      <button onclick="alert('感謝您的回饋！')">送出</button>
-    </section>
+     <section>
+      <h3 id="feedbackLabel">回饋與評論</h3>
+      <textarea id="feedbackTextarea" rows="4" class="form-control" placeholder="請留下您的建議..."></textarea>
+      <button id="sendBtn" class="btn btn-primary mt-2">送出</button>
+     </section>
+
 
     <section>
-      <h2>帳戶</h2>
-      <button onclick="logout()">登出帳戶</button>
-    </section>
+      <h3 id="logoutLabel">帳戶</h3>
+      <button onclick="logout()" class="btn btn-danger">登出帳戶</button>
+   </section>
   </main>
 
   <script>
-    // 主題切換
-    document.getElementById('themeSelect').addEventListener('change', function () {
-      document.body.className = this.value;
-      localStorage.setItem('theme', this.value);
-    });
 
-    // 語言切換（簡易處理）
-    document.getElementById('langSelect').addEventListener('change', function () {
-      alert('語言已切換，請重新整理頁面應用變更。');
-      localStorage.setItem('lang', this.value);
-    });
-
-    // 登出
-    function logout() {
-      localStorage.removeItem('user');
-      location.href = 'index.html';
-    }
-
-    // 初始化主題
-    window.onload = function () {
-      const theme = localStorage.getItem('theme');
-      if (theme) document.body.className = theme;
-      const lang = localStorage.getItem('lang');
-      if (lang) document.getElementById('langSelect').value = lang;
+   const langData = {
+      zh: {
+        title: "設定",
+         dashboard: "主頁",
+        currency: "匯率管理",
+        analysis: "圖表分析",
+        notify: "通知",
+       themeLabel: "主題模式",
+        reminderLabel: "提醒時間",
+        feedbackLabel: "回饋與評論",
+        langLabel: "語言",
+        logoutLabel: "帳戶",
+        send: "送出",
+        placeholder: "請留下您的建議..."
+      },
+      en: {
+        title: "Settings",
+         dashboard: "Dashboard",
+        currency: "Currency",
+        analysis: "Analysis",
+        notify: "Notifications",
+      themeLabel: "Theme Mode",
+        reminderLabel: "Reminder Time",
+        feedbackLabel: "Feedback & Comments",
+        logoutLabel: "Account",
+        langLabel: "langLabel",
+        send: "Send",
+        placeholder: "Leave your suggestion here..."
+      }
     };
-    document.addEventListener("DOMContentLoaded", function () {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    document.body.className = savedTheme;
-  });
-  const lang = localStorage.getItem("lang") || "zh";
-  if (lang === "en") {
-    document.getElementById("pageTitle").textContent = "My Budget Book";
-  } else {
-    document.getElementById("pageTitle").textContent = "我的記帳本";
-  }
+ 
+
+    function applyLanguage(lang) {
+      const d = langData[lang] || langData.zh;
+      document.getElementById("title").textContent = d.title;
+       document.getElementById("dashboard").textContent = d.dashboard;
+      document.getElementById("currency").textContent = d.currency;
+      document.getElementById("analysis").textContent = d.analysis;
+      document.getElementById("notify").textContent = d.notify;
+      document.getElementById("themeLabel").textContent = d.themeLabel;
+      document.getElementById("langLabel").textContent = d.langLabel;
+      document.getElementById("reminderLabel").textContent = d.reminderLabel;
+      document.getElementById("feedbackLabel").textContent = d.feedback;
+      document.getElementById("logoutLabel").textContent = d.logout;
+      document.getElementById("sendBtn").textContent = d.send;
+      document.getElementById("feedbackTextarea").placeholder = d.placeholder;
+      
+    }
+       document.getElementById("langSelect").addEventListener("change", () => {
+      const lang = document.getElementById("langSelect").value;
+      localStorage.setItem("lang", lang);
+      applyLanguage(lang);
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const theme = localStorage.getItem("theme") || "light";
+      const lang = localStorage.getItem("lang") || "zh";
+
+  
+
+      // 時間下拉選單（早上8點到晚上12點）
+      const reminderSelect = document.getElementById("reminderSelect");
+      for (let hour = 8; hour <= 24; hour++) {
+        const label = hour <= 12 ? `上午 ${hour} 點` : `下午 ${hour - 12} 點`;
+        const option = document.createElement("option");
+        option.value = hour;
+        option.textContent = label;
+        reminderSelect.appendChild(option);
+      }
+    });
+const theme = localStorage.getItem("theme") || "light";
+      document.body.className = theme;
+      document.getElementById("themeSelect").value = theme;
+
+    document.getElementById("themeSelect").addEventListener("change", (e) => {
+      const theme = e.target.value;
+      document.body.className = theme;
+      localStorage.setItem("theme", theme);
+    });
+
+
+
+    function logout() {
+      localStorage.removeItem("user");
+      alert("您已登出！");
+      location.href = "index.html";
+    }
   </script>
 </body>
 </html>

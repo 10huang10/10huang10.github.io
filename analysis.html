@@ -2,43 +2,115 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>圖表分析</title>
+  <title id="title">圖表分析</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     canvas {
-      max-width: 700px;
+      max-width: 1000px;
+      width: 100%;
       margin: 30px auto;
       display: block;
+    }
+    header {
+      margin-bottom: 20px;
+    }
+    #langSelect {
+      margin-left: 20px;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>圖表分析</h1>
+    <h1 id="pageTitle">圖表分析</h1>
     <nav>
-      <a href="dashboard.html">主頁</a>
-      <a href="settings.html">設定</a>
-      <a href="currency.html">多幣別管理</a>
-      <a href="notify.html">通知</a>
+      <a href="dashboard.html" id="dashboard">主頁</a> |
+      <a href="settings.html" id="settings">設定</a> |
+      <a href="currency.html" id="currency">匯率管理</a> |
+      <a href="notify.html" id="notify">通知</a>
+      <select id="langSelect" class="form-select w-auto d-inline-block">
+        <option value="zh">中文繁體</option>
+        <option value="en">English</option>
+      </select>
     </nav>
   </header>
 
   <main>
-   
-  <section class="mb-5">
-    <h2>平均支出與餘額（月比較）</h2>
-    <canvas id="barChart"></canvas>
-  </section>
+    <section class="mb-5">
+      <h2 id="barTitle">平均支出與餘額（月比較）</h2>
+      <canvas id="barChart"></canvas>
+    </section>
 
-  <section>
-    <h2>每日支出與收入趨勢</h2>
-    <canvas id="lineChart"></canvas>
-  </section>
+    <section>
+      <h2 id="lineTitle">每日支出與收入趨勢</h2>
+      <canvas id="lineChart"></canvas>
+    </section>
+  </main>
 
   <script>
-    const records = JSON.parse(localStorage.getItem("records") || "[]");
+    const langData = {
+      zh: {
+        title: "圖表分析",
+        pageTitle: "圖表分析",
+        dashboard: "主頁",
+        settings: "設定",
+        currency: "匯率管理",
+        notify: "通知",
+        barTitle: "平均支出與餘額（月比較）",
+        lineTitle: "每日支出與收入趨勢",
+        labels: {
+          lastMonth: "上月",
+          thisMonth: "本月",
+          avgExpense: "平均支出",
+          avgBalance: "平均餘額",
+          dailyIncome: "每日收入",
+          dailyExpense: "每日支出"
+        }
+      },
+      en: {
+        title: "Chart Analysis",
+        pageTitle: "Chart Analysis",
+        dashboard: "Dashboard",
+        settings: "Settings",
+        currency: "Currency",
+        notify: "Notifications",
+        barTitle: "Average Expense & Balance (Monthly)",
+        lineTitle: "Daily Income & Expense Trends",
+        labels: {
+          lastMonth: "Last Month",
+          thisMonth: "This Month",
+          avgExpense: "Avg Expense",
+          avgBalance: "Avg Balance",
+          dailyIncome: "Daily Income",
+          dailyExpense: "Daily Expense"
+        }
+      }
+    };
 
+    function applyLanguage(lang) {
+      const d = langData[lang];
+      document.title = d.title;
+      document.getElementById("pageTitle").textContent = d.pageTitle;
+      document.getElementById("dashboard").textContent = d.dashboard;
+      document.getElementById("settings").textContent = d.settings;
+      document.getElementById("currency").textContent = d.currency;
+      document.getElementById("notify").textContent = d.notify;
+      document.getElementById("barTitle").textContent = d.barTitle;
+      document.getElementById("lineTitle").textContent = d.lineTitle;
+
+      renderCharts(d.labels);
+    }
+
+    document.getElementById("langSelect").addEventListener("change", () => {
+      const lang = document.getElementById("langSelect").value;
+      localStorage.setItem("lang", lang);
+      applyLanguage(lang);
+    });
+
+    const savedLang = localStorage.getItem("lang") || "zh";
+    document.getElementById("langSelect").value = savedLang;
+
+    const records = JSON.parse(localStorage.getItem("records") || "[]");
     const now = new Date();
     const currentMonth = now.getMonth();
     const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
@@ -48,7 +120,7 @@
     let dailyIncome = {}, dailyExpense = {};
 
     records.forEach(r => {
-      const date = new Date(r.date || r.timestamp || Date.now());
+      const date = new Date(r.timestamp || Date.now());
       const m = date.getMonth();
       const d = date.getDate();
 
@@ -56,73 +128,82 @@
       if (!dailyExpense[d]) dailyExpense[d] = 0;
 
       if (m === currentMonth) {
-        if (r.type === "income") currentStats.income += r.amount;
-        else currentStats.expense += r.amount;
-        if (r.type === "income") dailyIncome[d] += r.amount;
-        else dailyExpense[d] += r.amount;
+        if (r.type === "income") {
+          currentStats.income += r.amount;
+          dailyIncome[d] += r.amount;
+        } else {
+          currentStats.expense += r.amount;
+          dailyExpense[d] += r.amount;
+        }
       } else if (m === lastMonth) {
         if (r.type === "income") lastStats.income += r.amount;
         else lastStats.expense += r.amount;
       }
     });
 
-    // 長條圖（平均支出與餘額）
-    const bar = new Chart(document.getElementById("barChart"), {
-      type: "bar",
-      data: {
-        labels: ["上月", "本月"],
-        datasets: [
-          {
-            label: "平均支出",
-            backgroundColor: "#FF6384",
-            data: [lastStats.expense / 30, currentStats.expense / 30]
-          },
-          {
-            label: "平均餘額",
-            backgroundColor: "#36A2EB",
-            data: [(lastStats.income - lastStats.expense) / 30, (currentStats.income - currentStats.expense) / 30]
-          }
-        ]
-      },
-      options: { responsive: true }
-    });
+    let barChartInstance = null;
+    let lineChartInstance = null;
 
-    // 折線圖（每日趨勢）
-    const days = Array.from({ length: 31 }, (_, i) => i + 1);
-    const incomeLine = days.map(day => dailyIncome[day] || 0);
-    const expenseLine = days.map(day => dailyExpense[day] || 0);
+    function renderCharts(labels) {
+      const ctxBar = document.getElementById("barChart").getContext("2d");
+      const ctxLine = document.getElementById("lineChart").getContext("2d");
 
-    const line = new Chart(document.getElementById("lineChart"), {
-      type: "line",
-      data: {
-        labels: days.map(d => `${d}日`),
-        datasets: [
-          {
-            label: "每日收入",
-            borderColor: "green",
-            data: incomeLine,
-            fill: false
-          },
-          {
-            label: "每日支出",
-            borderColor: "red",
-            data: expenseLine,
-            fill: false
-          }
-        ]
-      },
-      options: { responsive: true }
+      if (barChartInstance) barChartInstance.destroy();
+      if (lineChartInstance) lineChartInstance.destroy();
+
+      barChartInstance = new Chart(ctxBar, {
+        type: "bar",
+        data: {
+          labels: [labels.lastMonth, labels.thisMonth],
+          datasets: [
+            {
+              label: labels.avgExpense,
+              backgroundColor: "#FF6384",
+              data: [lastStats.expense / 30, currentStats.expense / 30]
+            },
+            {
+              label: labels.avgBalance,
+              backgroundColor: "#36A2EB",
+              data: [
+                (lastStats.income - lastStats.expense) / 30,
+                (currentStats.income - currentStats.expense) / 30
+              ]
+            }
+          ]
+        },
+        options: { responsive: true }
+      });
+
+      const days = Array.from({ length: 31 }, (_, i) => i + 1);
+      const incomeLine = days.map(day => dailyIncome[day] || 0);
+      const expenseLine = days.map(day => dailyExpense[day] || 0);
+
+      lineChartInstance = new Chart(ctxLine, {
+        type: "line",
+        data: {
+          labels: days.map(d => `${d}`),
+          datasets: [
+            {
+              label: labels.dailyIncome,
+              borderColor: "green",
+              data: incomeLine,
+              fill: false
+            },
+            {
+              label: labels.dailyExpense,
+              borderColor: "red",
+              data: expenseLine,
+              fill: false
+            }
+          ]
+        },
+        options: { responsive: true }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      applyLanguage(savedLang);
     });
-    document.addEventListener("DOMContentLoaded", function () {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    document.body.className = savedTheme;
-  });
-  const lang = localStorage.getItem("lang") || "zh";
-  if (lang === "en") {
-    document.getElementById("pageTitle").textContent = "My Budget Book";
-  } else {
-    document.getElementById("pageTitle").textContent = "我的記帳本";
-  }
   </script>
 </body>
 </html>

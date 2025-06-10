@@ -5,16 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>登入頁</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script src="common.js"></script>
 </head>
 <body>
-    <h2>登入</h2>
-    <input id="user" placeholder="帳號"><input id="pass" placeholder="密碼" type="password">
+    <h2>登入log in</h2>
+    <input id="user" placeholder="帳號pass"><input id="pass" placeholder="密碼password" type="password">
     <button onclick="login()">登入</button>
     <hr>
-    <h3>註冊帳號</h3>
-    <input id="newUser" placeholder="新帳號"><input id="newPass" placeholder="新密碼" type="password">
+    <h3>註冊帳號Register an account</h3>
+    <input id="newUser" placeholder="新帳號newPass"><input id="newPass" placeholder="新密碼new password" type="password">
     <button onclick="register()">註冊</button>
     <script>
+      
       function login() {
         const u = user.value, p = pass.value;
         const users = JSON.parse(localStorage.getItem("users") || "{}");
@@ -31,16 +33,6 @@
         localStorage.setItem("users", JSON.stringify(users));
         alert("註冊成功");
       }
-      document.addEventListener("DOMContentLoaded", function () {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    document.body.className = savedTheme;
-  });
-  const lang = localStorage.getItem("lang") || "zh";
-  if (lang === "en") {
-    document.getElementById("pageTitle").textContent = "My Budget Book";
-  } else {
-    document.getElementById("pageTitle").textContent = "我的記帳本";
-  }
   </script>
 </body>
 </html>
